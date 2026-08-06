@@ -1,4 +1,14 @@
-# VINS-Fusion
+# VINS-Fusion (DRT + structureless VI-BA init)
+
+> **Note:** This is a modified fork of [HKUST-Aerial-Robotics/VINS-Fusion](https://github.com/HKUST-Aerial-Robotics/VINS-Fusion).
+> It **replaces VINS-Fusion's initializer** (`Estimator::initialStructure()`) with a
+> **structureless DRT + VI-BA** initializer ported from
+> [boxuLibrary/drt-vio-init](https://github.com/boxuLibrary/drt-vio-init), selectable at
+> runtime via the `use_drt_init` config flag. On EuRoC MH01–05 (mono+IMU) the DRT+VI-BA init
+> gives −9.2% ATE on average (−24% on MH05) and ~4× faster initialization than stock VINS.
+> Both upstreams are **GPLv3**; this fork keeps that license. Build/toolchain fixes were
+> applied to compile on Ubuntu 24.04 via RoboStack (conda) with Ceres 2.1 / OpenCV 4.
+
 ## An optimization-based multi-sensor state estimator
 
 <img src="https://github.com/HKUST-Aerial-Robotics/VINS-Fusion/blob/master/support_files/image/vins_logo.png" width = 55% height = 55% div align=left />
