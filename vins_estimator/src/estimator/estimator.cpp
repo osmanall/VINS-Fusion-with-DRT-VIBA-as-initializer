@@ -8,6 +8,7 @@
  *******************************************************/
 
 #include "estimator.h"
+#include "drt_glue.h"
 #include "../utility/visualization.h"
 
 Estimator::Estimator(): f_manager{Rs}
@@ -461,7 +462,9 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
                 bool result = false;
                 if(ESTIMATE_EXTRINSIC != 2 && (header - initial_timestamp) > 0.1)
                 {
-                    result = initialStructure();
+                    TicToc t_drt_init;
+                    result = USE_DRT_INIT ? drtInitStructure() : initialStructure();
+                    if (result) printf("INIT_SOLVE_TIME: %.3f ms (drt=%d)\n", t_drt_init.toc(), USE_DRT_INIT);
                     initial_timestamp = header;   
                 }
                 if(result)
@@ -1608,4 +1611,45 @@ void Estimator::updateLatestStates()
         tmp_gyrBuf.pop();
     }
     mPropagate.unlock();
+}
+
+bool Estimator::drtInitStructure()
+{
+    int N = frame_count + 1;
+    std::vector<double> stamps;
+    std::vector<std::map<int, std::vector<std::pair<int, Eigen::Matrix<double,7,1>>>>> feats;
+    std::vector<std::vector<DrtImuSample>> imus;
+        for (int i = 0; i < N; i++) {
+        stamps.push_back(Headers[i]);
+        feats.push_back(all_image_frame[Headers[i]].points);
+        if (i > 0) {
+            std::vector<DrtImuSample> s;
+            IntegrationBase* pre = pre_integrations[i];
+            if (pre)
+                for (size_t k = 0; k < pre->dt_buf.size(); k++)
+                    s.push_back({pre->gyr_buf[k], pre->acc_buf[k], pre->dt_buf[k]});
+            imus.push_back(s);
+        }
+    }
+
+    DrtInitOut r = RunDrtInit(RIC[0], TIC[0], GYR_N, ACC_N, GYR_W, ACC_W, stamps, feats, imus);
+        if (!r.ok || (int)r.R.size() != N) { ROS_WARN("DRT init failed: N=%d got=%d ok=%d", N, (int)r.R.size(), (int)r.ok); return false; }
+    for (int i = 0; i < N; i++) {
+        Rs[i] = r.R[i]; Ps[i] = r.P[i]; Vs[i] = r.V[i];
+        Bgs[i] = r.bg;  Bas[i] = r.ba;
+    }
+    g = r.g;
+
+    Matrix3d R0 = Utility::g2R(g);
+    double yaw = Utility::R2ypr(R0 * Rs[0]).x();
+    R0 = Utility::ypr2R(Eigen::Vector3d{-yaw, 0, 0}) * R0;
+    g = R0 * g;
+    for (int i = 0; i < N; i++) { Ps[i] = R0*Ps[i]; Rs[i] = R0*Rs[i]; Vs[i] = R0*Vs[i]; }
+
+    for (int i = 0; i <= WINDOW_SIZE; i++)
+        pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);
+    for (auto& kv : all_image_frame) kv.second.is_key_frame = true;
+
+    ROS_INFO("DRT init finished");
+    return true;
 }

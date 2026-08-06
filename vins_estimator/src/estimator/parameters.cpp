@@ -35,6 +35,7 @@ double TD;
 int NUM_OF_CAM;
 int STEREO;
 int USE_IMU;
+int USE_DRT_INIT;
 int MULTIPLE_THREAD;
 map<int, Eigen::Vector3d> pts_gt;
 std::string IMAGE0_TOPIC, IMAGE1_TOPIC;
@@ -91,6 +92,10 @@ void readParameters(std::string config_file)
 
     USE_IMU = fsSettings["imu"];
     printf("USE_IMU: %d\n", USE_IMU);
+    USE_DRT_INIT = 0;
+    if (!fsSettings["use_drt_init"].isNone())
+        USE_DRT_INIT = (int)fsSettings["use_drt_init"];
+    printf("USE_DRT_INIT: %d\n", USE_DRT_INIT);
     if(USE_IMU)
     {
         fsSettings["imu_topic"] >> IMU_TOPIC;
