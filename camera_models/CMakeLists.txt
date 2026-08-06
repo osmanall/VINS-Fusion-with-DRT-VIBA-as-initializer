@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(camera_models)
 
 set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_FLAGS "-std=c++11")
+set(CMAKE_CXX_FLAGS "-std=c++17 -I/home/aze-pc-0331/miniforge3/envs/ros_env/include")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fPIC")
 
 find_package(catkin REQUIRED COMPONENTS
@@ -33,25 +33,7 @@ include_directories(
 
 include_directories("include")
 
-add_executable(Calibrations 
-    src/intrinsic_calib.cc
-    src/chessboard/Chessboard.cc
-    src/calib/CameraCalibration.cc
-    src/camera_models/Camera.cc
-    src/camera_models/CameraFactory.cc
-    src/camera_models/CostFunctionFactory.cc
-    src/camera_models/PinholeCamera.cc
-    src/camera_models/PinholeFullCamera.cc
-    src/camera_models/CataCamera.cc
-    src/camera_models/EquidistantCamera.cc
-    src/camera_models/ScaramuzzaCamera.cc
-    src/sparse_graph/Transform.cc
-    src/gpl/gpl.cc
-    src/gpl/EigenQuaternionParameterization.cc)
-
 add_library(camera_models
-    src/chessboard/Chessboard.cc
-    src/calib/CameraCalibration.cc
     src/camera_models/Camera.cc
     src/camera_models/CameraFactory.cc
     src/camera_models/CostFunctionFactory.cc
@@ -61,8 +43,6 @@ add_library(camera_models
     src/camera_models/EquidistantCamera.cc
     src/camera_models/ScaramuzzaCamera.cc
     src/sparse_graph/Transform.cc
-    src/gpl/gpl.cc
-    src/gpl/EigenQuaternionParameterization.cc)
+    src/gpl/gpl.cc)
 
-target_link_libraries(Calibrations ${Boost_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})
 target_link_libraries(camera_models ${Boost_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})
